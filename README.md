@@ -15,9 +15,14 @@ The interface includes:
 
 - Reference-matched desktop layout plus compact-height laptop mode
 - Tablet and mobile layouts
-- Animated wind, storm-cell, location, route, and weather-status layers
-- Interactive map zoom, animation controls, and layer selection
+- A real, interactive [MapLibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) vector map
+- Free [OpenFreeMap](https://openfreemap.org/) tiles with OpenStreetMap attribution and no API key
+- Animated wind, storm-cell, hub, alert-zone, and geographic flight-corridor layers
+- Map pan/zoom, reset, animation controls, popups, and weather-layer selection
 - Deep-linked forecast, alert, corridor, map, hub, report, and settings pages
 - Browser back/forward support through URL hash routes
+- An automatic cached-image fallback if the external map style is unavailable
 
-The radar panel uses a lossless crop of the supplied map region so its labels, weather layers, markers, controls, and legends retain the reference image's fidelity.
+The included operational weather values and animated weather cells are demonstration data. Connect a production weather API or weather-tile provider before using the dashboard for real flight decisions.
+
+To use another MapLibre-compatible style, set `VITE_MAP_STYLE_URL` before starting or building the app.
