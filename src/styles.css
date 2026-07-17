@@ -620,35 +620,253 @@ button {
   transition: transform .35s cubic-bezier(.2, .7, .2, 1);
 }
 
-.map-hit-controls {
+.live-weather-map {
   position: absolute;
-  z-index: 2;
-  top: 17px;
-  right: 17px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  opacity: .9;
+  inset: 0;
+  overflow: hidden;
+  background: #061a2a;
 }
 
-.map-hit-controls button {
+.maplibre-canvas,
+.live-map-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.maplibre-canvas {
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .45s ease;
+}
+
+.live-map-fallback {
+  z-index: 0;
+  display: block;
+  object-fit: cover;
+  filter: saturate(.76) brightness(.62);
+  transform: scale(1.012);
+}
+
+.live-weather-map.is-ready .maplibre-canvas {
+  opacity: 1;
+}
+
+.live-weather-map.is-fallback .maplibre-canvas {
+  display: none;
+}
+
+.map-panel-fallback {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  filter: saturate(.72) brightness(.68);
+}
+
+.live-weather-map .maplibregl-map,
+.live-weather-map .maplibregl-canvas-container,
+.live-weather-map .maplibregl-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.live-weather-map .maplibregl-canvas:focus {
+  outline: none;
+}
+
+.live-weather-map .maplibregl-ctrl-top-right {
+  top: 16px;
+  right: 16px;
+}
+
+.live-weather-map .maplibregl-ctrl-group {
+  overflow: hidden;
+  margin: 0;
+  background: rgba(35, 57, 75, .9);
+  border: 1px solid rgba(122, 156, 181, .38);
+  border-radius: 5px;
+  box-shadow: 0 4px 13px rgba(0, 0, 0, .3);
+  backdrop-filter: blur(5px);
+}
+
+.live-weather-map .maplibregl-ctrl-group button {
   width: 34px;
   height: 34px;
-  display: grid;
-  place-items: center;
-  color: #e8f2fb;
-  border: 1px solid rgba(122, 156, 181, .35);
-  border-radius: 4px;
-  background: rgba(44, 65, 82, .82);
-  box-shadow: 0 3px 9px rgba(0, 0, 0, .22);
-  backdrop-filter: blur(5px);
-  cursor: pointer;
 }
 
-.map-hit-controls button:hover {
-  color: #fff;
-  background: rgba(60, 88, 109, .96);
+.live-weather-map .maplibregl-ctrl-group button + button {
+  border-top-color: rgba(142, 170, 190, .22);
 }
+
+.live-weather-map .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(1.65);
+  opacity: .92;
+}
+
+.live-weather-map .maplibregl-ctrl-attrib {
+  color: #9eb0bd;
+  background: rgba(2, 13, 23, .74);
+  font-size: 8px;
+  backdrop-filter: blur(5px);
+}
+
+.live-weather-map .maplibregl-ctrl-attrib a {
+  color: #b7c9d5;
+}
+
+.live-weather-map .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
+  opacity: .75;
+}
+
+.live-map-home {
+  position: absolute;
+  z-index: 6;
+  top: 90px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: #e8f4fd;
+  background: rgba(35, 57, 75, .9);
+  border: 1px solid rgba(122, 156, 181, .38);
+  border-radius: 5px;
+  box-shadow: 0 4px 13px rgba(0, 0, 0, .3);
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+}
+
+.live-map-home:hover {
+  color: #fff;
+  background: rgba(54, 83, 104, .98);
+}
+
+.map-loading,
+.map-fallback-notice {
+  position: absolute;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  color: #c9dae7;
+  background: rgba(2, 15, 27, .76);
+  border: 1px solid rgba(86, 139, 175, .38);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(9px);
+}
+
+.map-loading {
+  top: 50%;
+  left: 50%;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 9px;
+  transform: translate(-50%, -50%);
+}
+
+.map-loading i {
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(91, 177, 239, .25);
+  border-top-color: #54aaf3;
+  border-radius: 50%;
+  animation: map-loader-spin .85s linear infinite;
+}
+
+.map-fallback-notice {
+  top: 14px;
+  left: 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.map-fallback-notice span { color: #f0c66d; font-size: 8.5px; font-weight: 650; }
+.map-fallback-notice small { color: #9db0c1; font-size: 7.5px; }
+
+.live-wind-overlay {
+  z-index: 3;
+}
+
+.open-map-source {
+  position: absolute;
+  z-index: 6;
+  bottom: 72px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  color: #b7c7d5;
+  background: rgba(2, 15, 27, .75);
+  border: 1px solid rgba(76, 137, 176, .38);
+  border-radius: 5px;
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: .3px;
+  backdrop-filter: blur(7px);
+}
+
+.weather-map-popup .maplibregl-popup-content {
+  min-width: 156px;
+  padding: 0;
+  overflow: hidden;
+  color: #dfeaf3;
+  background: rgba(5, 22, 35, .96);
+  border: 1px solid #35536a;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .42);
+  backdrop-filter: blur(10px);
+}
+
+.weather-map-popup .maplibregl-popup-tip {
+  border-top-color: #35536a;
+}
+
+.map-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px;
+}
+
+.map-popup-content > span {
+  color: #4e9ce4;
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.map-popup-content > strong {
+  color: #f0f5fa;
+  font-size: 11px;
+}
+
+.map-popup-content > p {
+  margin: 0;
+  color: #a4b6c5;
+  font-size: 8px;
+}
+
+.map-popup-content > i {
+  align-self: flex-start;
+  padding: 3px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 6.5px;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.map-popup-content > i.favorable { color: #42ce80; }
+.map-popup-content > i.caution { color: #ffc20a; }
+.map-popup-content > i.unfavorable { color: #f25a50; }
 
 .forecast-card .card-heading,
 .parameters-card .card-heading {
@@ -1018,8 +1236,6 @@ button {
   cursor: pointer;
   backdrop-filter: blur(6px);
 }
-
-.map-hit-controls { z-index: 4; }
 
 /* Detail pages */
 .detail-page {
@@ -1463,21 +1679,6 @@ button {
 .mini-map > img { width: 100%; height: 100%; object-fit: cover; }
 .mini-map .map-motion { z-index: 2; }
 
-.zone {
-  position: absolute;
-  z-index: 4;
-  width: 18px;
-  height: 18px;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  box-shadow: 0 0 0 0 currentColor;
-  animation: zone-ping 2s ease-out infinite;
-}
-
-.zone-one { left: 66%; top: 22%; color: rgba(239, 72, 62, .85); }
-.zone-two { left: 54%; top: 65%; color: rgba(248, 185, 0, .85); animation-delay: -.8s; }
-.zone-three { left: 40%; top: 38%; color: rgba(248, 185, 0, .85); animation-delay: -1.4s; }
-
 .map-alert-legend {
   min-height: 47px;
   display: flex;
@@ -1508,28 +1709,6 @@ button {
 
 .corridor-map-wrap .map-panel,
 .expanded-map-wrap .map-panel { width: 100%; height: 100%; border-radius: 0; }
-
-.route-overlay {
-  position: absolute;
-  z-index: 4;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.route-overlay .route {
-  fill: none;
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-dasharray: 8 9;
-  animation: route-flow 1.5s linear infinite;
-  filter: drop-shadow(0 0 5px currentColor);
-}
-
-.route-overlay .favorable { color: #3ec47b; stroke: #3ec47b; }
-.route-overlay .caution { color: #ffc20a; stroke: #ffc20a; }
-.route-overlay .unfavorable { color: #ef4c43; stroke: #ef4c43; }
 
 .route-map-label {
   right: 14px;
@@ -1755,13 +1934,8 @@ button {
   50% { opacity: 1; }
 }
 
-@keyframes zone-ping {
-  0% { box-shadow: 0 0 0 0 currentColor; opacity: .95; }
-  100% { box-shadow: 0 0 0 20px transparent; opacity: .25; }
-}
-
-@keyframes route-flow {
-  to { stroke-dashoffset: -34; }
+@keyframes map-loader-spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1450px) {
@@ -2016,6 +2190,75 @@ button {
 
   .detail-page {
     height: 100%;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 1211px) {
+  .dashboard {
+    grid-template-rows: minmax(392px, 1fr) 126px;
+  }
+
+  .left-stack {
+    grid-template-rows: 128px 136px minmax(112px, 1fr);
+  }
+
+  .right-stack {
+    grid-template-rows: 202px minmax(182px, 1fr);
+  }
+
+  .overview-main {
+    height: 46px;
+  }
+
+  .weather-overview .weather-glyph {
+    width: 49px;
+  }
+
+  .overview-metrics {
+    height: 37px;
+  }
+
+  .impact-content .donut {
+    width: 86px;
+  }
+
+  .impact-legend {
+    gap: 8px;
+  }
+
+  .hub-status .card-heading {
+    min-height: 31px;
+    padding-top: 6px;
+  }
+
+  .hub-grid {
+    height: calc(100% - 31px);
+  }
+
+  .hub-card {
+    padding-block: 4px;
+  }
+
+  .hub-weather {
+    min-height: 35px;
+  }
+
+  .hub-weather .weather-glyph {
+    width: 38px;
+  }
+
+  .corridor-risk .card-heading {
+    min-height: 34px;
+    padding-top: 6px;
+  }
+
+  .risk-content {
+    height: calc(100% - 34px);
+    padding-block: 1px 4px;
+  }
+
+  .donut.risk {
+    width: 82px;
   }
 }
 
