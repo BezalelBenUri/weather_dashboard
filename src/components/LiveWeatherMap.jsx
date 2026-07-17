@@ -3,23 +3,65 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { Layers3, LocateFixed, Pause, Play, Radio } from 'lucide-react'
 import fallbackMap from '../assets/nigeria-weather-map.png'
+import nigeriaBoundaryUrl from '../data/Nigeria_Boundary.geojson?url'
 import {
   alertZones,
+  createCorridorTraffic,
   createWeatherCells,
   mapCorridors,
   mapHubs,
-  nigeriaBoundary,
   nigeriaBounds,
 } from '../data/mapData'
 
 const OPEN_FREE_MAP_STYLE = 'https://tiles.openfreemap.org/styles/dark'
 
-const windStreaks = Array.from({ length: 24 }, (_, index) => ({
-  x: (index * 17 + 8) % 94,
-  y: (index * 29 + 11) % 86,
-  delay: -((index * .37) % 4),
-  duration: 3.2 + (index % 5) * .38,
-}))
+const particleThemes = {
+  Rainfall: {
+    colors: ['rgba(97, 221, 255, .72)', 'rgba(96, 255, 178, .7)', 'rgba(255, 225, 94, .66)'],
+    direction: -.36,
+    speed: 1.22,
+    turbulence: .72,
+    lineWidth: 1.05,
+    fade: .925,
+    density: 930,
+  },
+  'Wind Speed': {
+    colors: ['rgba(222, 246, 255, .8)', 'rgba(91, 196, 255, .78)', 'rgba(173, 135, 255, .7)'],
+    direction: -.24,
+    speed: 2.05,
+    turbulence: .58,
+    lineWidth: .9,
+    fade: .94,
+    density: 710,
+  },
+  'Cloud Cover': {
+    colors: ['rgba(225, 239, 249, .42)', 'rgba(177, 211, 235, .4)', 'rgba(137, 184, 218, .34)'],
+    direction: -.08,
+    speed: .72,
+    turbulence: 1.08,
+    lineWidth: 1.35,
+    fade: .91,
+    density: 1320,
+  },
+  Visibility: {
+    colors: ['rgba(118, 244, 238, .56)', 'rgba(147, 211, 255, .5)', 'rgba(221, 252, 255, .44)'],
+    direction: .08,
+    speed: .86,
+    turbulence: .82,
+    lineWidth: 1,
+    fade: .915,
+    density: 1120,
+  },
+  Temperature: {
+    colors: ['rgba(255, 211, 79, .62)', 'rgba(255, 137, 55, .68)', 'rgba(255, 88, 92, .62)'],
+    direction: -.52,
+    speed: .94,
+    turbulence: 1.22,
+    lineWidth: 1.18,
+    fade: .91,
+    density: 1040,
+  },
+}
 
 const layerPalettes = {
   Rainfall: [
@@ -65,26 +107,118 @@ const layerPalettes = {
   ],
 }
 
-function WindOverlay({ paused, visible }) {
+function WeatherParticleLayer({ layer, paused, visible }) {
+  const canvasRef = useRef(null)
+  const pausedRef = useRef(paused)
+
+  pausedRef.current = paused
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !visible) return undefined
+    const context = canvas.getContext('2d', { alpha: true })
+    const theme = particleThemes[layer] || particleThemes.Rainfall
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let animationFrame
+    let resizeObserver
+    let particles = []
+    let width = 0
+    let height = 0
+    let previousTime = performance.now()
+
+    const seedParticle = (particle = {}, fromEdge = false) => {
+      particle.x = fromEdge ? -12 - Math.random() * width * .12 : Math.random() * width
+      particle.y = Math.random() * height
+      particle.age = Math.random() * 280
+      particle.life = 150 + Math.random() * 230
+      particle.speed = .58 + Math.random() * .9
+      particle.energy = .38 + Math.random() * .62
+      particle.color = theme.colors[Math.floor(Math.random() * theme.colors.length)]
+      return particle
+    }
+
+    const resize = () => {
+      const bounds = canvas.getBoundingClientRect()
+      width = Math.max(1, Math.round(bounds.width))
+      height = Math.max(1, Math.round(bounds.height))
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5)
+      canvas.width = Math.round(width * pixelRatio)
+      canvas.height = Math.round(height * pixelRatio)
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+      const count = Math.max(120, Math.min(1050, Math.round((width * height) / theme.density)))
+      particles = Array.from({ length: count }, () => seedParticle())
+      context.clearRect(0, 0, width, height)
+    }
+
+    const animate = (time) => {
+      animationFrame = window.requestAnimationFrame(animate)
+      if (pausedRef.current || reduceMotion || !width || !height) {
+        previousTime = time
+        return
+      }
+
+      const delta = Math.min(2.1, Math.max(.45, (time - previousTime) / 16.67))
+      const seconds = time * .001
+      previousTime = time
+
+      context.globalCompositeOperation = 'destination-in'
+      context.fillStyle = `rgba(0, 0, 0, ${theme.fade})`
+      context.fillRect(0, 0, width, height)
+      context.globalCompositeOperation = 'source-over'
+      context.lineCap = 'round'
+
+      for (const particle of particles) {
+        const previousX = particle.x
+        const previousY = particle.y
+        const normalizedX = particle.x / Math.max(width, 1)
+        const normalizedY = particle.y / Math.max(height, 1)
+        const wave = Math.sin(normalizedY * 11 + seconds * .55) * .42
+          + Math.cos(normalizedX * 8 - seconds * .32) * .26
+          + Math.sin((normalizedX + normalizedY) * 14 + seconds * .2) * .16
+        const angle = theme.direction + wave * theme.turbulence
+        const velocity = theme.speed * particle.speed * delta
+
+        particle.x += Math.cos(angle) * velocity * 2.05
+        particle.y += Math.sin(angle) * velocity
+        particle.age += delta
+
+        if (particle.x < -24 || particle.x > width + 24 || particle.y < -24 || particle.y > height + 24 || particle.age > particle.life) {
+          seedParticle(particle, true)
+          continue
+        }
+
+        context.globalAlpha = particle.energy
+        context.strokeStyle = particle.color
+        context.lineWidth = theme.lineWidth * (.72 + particle.energy * .48)
+        context.beginPath()
+        context.moveTo(previousX, previousY)
+        context.lineTo(particle.x, particle.y)
+        context.stroke()
+      }
+
+      context.globalAlpha = 1
+    }
+
+    resizeObserver = new ResizeObserver(resize)
+    resizeObserver.observe(canvas)
+    resize()
+    animationFrame = window.requestAnimationFrame(animate)
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      resizeObserver.disconnect()
+      context.clearRect(0, 0, width, height)
+    }
+  }, [layer, visible])
+
   if (!visible) return null
-  return (
-    <div className={`map-motion live-wind-overlay ${paused ? 'paused' : ''}`} aria-hidden="true">
-      <div className="wind-field">
-        {windStreaks.map((streak, index) => (
-          <i
-            key={index}
-            style={{ '--x': `${streak.x}%`, '--y': `${streak.y}%`, '--delay': `${streak.delay}s`, '--duration': `${streak.duration}s` }}
-          />
-        ))}
-      </div>
-    </div>
-  )
+  return <canvas ref={canvasRef} className="weather-particle-canvas" aria-hidden="true" />
 }
 
 function addOperationalLayers(map) {
   const firstLabel = map.getStyle().layers?.find((layer) => layer.type === 'symbol')?.id
 
-  map.addSource('nigeria-boundary', { type: 'geojson', data: nigeriaBoundary })
+  map.addSource('nigeria-boundary', { type: 'geojson', data: nigeriaBoundaryUrl })
   map.addLayer({
     id: 'nigeria-focus',
     type: 'fill',
@@ -154,6 +288,45 @@ function addOperationalLayers(map) {
       'line-width': ['interpolate', ['linear'], ['zoom'], 4, 1.8, 7, 3.4],
       'line-opacity': .92,
       'line-dasharray': [2, 2.2],
+    },
+  })
+
+  map.addSource('corridor-traffic', { type: 'geojson', data: createCorridorTraffic(0) })
+  map.addLayer({
+    id: 'corridor-traffic-glow',
+    type: 'circle',
+    source: 'corridor-traffic',
+    layout: { visibility: 'none' },
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['get', 'strength'], .3, 2, 1, 10],
+      'circle-color': ['match', ['get', 'status'], 'favorable', '#43d487', 'caution', '#ffd12a', '#ff5b52'],
+      'circle-opacity': ['*', ['get', 'strength'], .32],
+      'circle-blur': .72,
+    },
+  })
+  map.addLayer({
+    id: 'corridor-traffic-tail',
+    type: 'circle',
+    source: 'corridor-traffic',
+    layout: { visibility: 'none' },
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['get', 'strength'], .3, 1.2, 1, 3.7],
+      'circle-color': ['match', ['get', 'status'], 'favorable', '#43d487', 'caution', '#ffd12a', '#ff5b52'],
+      'circle-opacity': ['*', ['get', 'strength'], .9],
+    },
+  })
+  map.addLayer({
+    id: 'corridor-traffic-head',
+    type: 'circle',
+    source: 'corridor-traffic',
+    filter: ['==', ['get', 'head'], 1],
+    layout: { visibility: 'none' },
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 3.4, 7, 5.2],
+      'circle-color': ['match', ['get', 'status'], 'favorable', '#43d487', 'caution', '#ffd12a', '#ff5b52'],
+      'circle-stroke-color': '#f5fbff',
+      'circle-stroke-width': 1.25,
+      'circle-opacity': .98,
     },
   })
 
@@ -231,7 +404,9 @@ function setLayerVisibility(map, mode) {
   if (!map.getLayer('corridor-lines')) return
   const showCorridors = mode === 'corridors' || mode === 'weather'
   const showAlerts = mode === 'alerts'
-  for (const id of ['corridor-glow', 'corridor-lines']) map.setLayoutProperty(id, 'visibility', showCorridors ? 'visible' : 'none')
+  for (const id of ['corridor-glow', 'corridor-lines', 'corridor-traffic-glow', 'corridor-traffic-tail', 'corridor-traffic-head']) {
+    map.setLayoutProperty(id, 'visibility', showCorridors ? 'visible' : 'none')
+  }
   for (const id of ['alert-zone-glow', 'alert-zone-labels']) map.setLayoutProperty(id, 'visibility', showAlerts ? 'visible' : 'none')
 }
 
@@ -273,6 +448,7 @@ export default function LiveWeatherMap({
     let resizeObserver
     let loadTimer
     let lastUpdate = 0
+    let lastTrafficUpdate = 0
     let phase = 0
     let initialized = false
 
@@ -363,6 +539,13 @@ export default function LiveWeatherMap({
             map.setPaintProperty('hub-pulse', 'circle-opacity', .1 + (Math.sin(phase * 3.1) + 1) * .055)
             lastUpdate = timestamp
           }
+          if (!pausedRef.current && timestamp - lastTrafficUpdate > 48) {
+            const routeProgress = (timestamp % 5200) / 5200
+            map.getSource('corridor-traffic')?.setData(createCorridorTraffic(routeProgress))
+            map.setPaintProperty('corridor-lines', 'line-opacity', .76 + Math.sin(timestamp * .006) * .16)
+            map.setPaintProperty('corridor-glow', 'line-opacity', .14 + (Math.sin(timestamp * .006) + 1) * .06)
+            lastTrafficUpdate = timestamp
+          }
           animationRef.current = window.requestAnimationFrame(animate)
         }
         animationRef.current = window.requestAnimationFrame(animate)
@@ -404,7 +587,7 @@ export default function LiveWeatherMap({
     <div className={`live-weather-map ${className} is-${status}`}>
       <img className="live-map-fallback" src={fallbackMap} alt="Nigeria weather map fallback" />
       <div ref={containerRef} className="maplibre-canvas" aria-label="Interactive weather map of Nigeria" />
-      <WindOverlay paused={paused} visible={layer === 'Wind Speed' || mode === 'overview'} />
+      <WeatherParticleLayer layer={layer} paused={paused} visible={status === 'ready'} />
 
       {status === 'loading' && <div className="map-loading"><i /><span>Loading live basemap</span></div>}
       {status === 'fallback' && <div className="map-fallback-notice"><span>Map temporarily offline</span><small>Showing cached weather view</small></div>}

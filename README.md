@@ -17,7 +17,9 @@ The interface includes:
 - Tablet and mobile layouts
 - A real, interactive [MapLibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) vector map
 - Free [OpenFreeMap](https://openfreemap.org/) tiles with OpenStreetMap attribution and no API key
-- Animated wind, storm-cell, hub, alert-zone, and geographic flight-corridor layers
+- Windy-style particle animation for rainfall, wind, cloud cover, visibility, and temperature
+- Animated storm cells, hubs, alert zones, and moving traffic along geographic flight corridors
+- High-resolution Nigeria boundary rendering from the supplied CRS84 GeoJSON
 - Map pan/zoom, reset, animation controls, popups, and weather-layer selection
 - Deep-linked forecast, alert, corridor, map, hub, report, and settings pages
 - Browser back/forward support through URL hash routes

@@ -1,39 +1,3 @@
-export const nigeriaBoundary = {
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      id: 'NGA',
-      properties: { name: 'Nigeria' },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [8.500288, 4.771983], [7.462108, 4.412108], [7.082596, 4.464689],
-          [6.698072, 4.240594], [5.898173, 4.262453], [5.362805, 4.887971],
-          [5.033574, 5.611802], [4.325607, 6.270651], [3.57418, 6.2583],
-          [2.691702, 6.258817], [2.749063, 7.870734], [2.723793, 8.506845],
-          [2.912308, 9.137608], [3.220352, 9.444153], [3.705438, 10.06321],
-          [3.60007, 10.332186], [3.797112, 10.734746], [3.572216, 11.327939],
-          [3.61118, 11.660167], [3.680634, 12.552903], [3.967283, 12.956109],
-          [4.107946, 13.531216], [4.368344, 13.747482], [5.443058, 13.865924],
-          [6.445426, 13.492768], [6.820442, 13.115091], [7.330747, 13.098038],
-          [7.804671, 13.343527], [9.014933, 12.826659], [9.524928, 12.851102],
-          [10.114814, 13.277252], [10.701032, 13.246918], [10.989593, 13.387323],
-          [11.527803, 13.32898], [12.302071, 13.037189], [13.083987, 13.596147],
-          [13.318702, 13.556356], [13.995353, 12.461565], [14.181336, 12.483657],
-          [14.577178, 12.085361], [14.468192, 11.904752], [14.415379, 11.572369],
-          [13.57295, 10.798566], [13.308676, 10.160362], [13.1676, 9.640626],
-          [12.955468, 9.417772], [12.753672, 8.717763], [12.218872, 8.305824],
-          [12.063946, 7.799808], [11.839309, 7.397042], [11.745774, 6.981383],
-          [11.058788, 6.644427], [10.497375, 7.055358], [10.118277, 7.03877],
-          [9.522706, 6.453482], [9.233163, 6.444491], [8.757533, 5.479666],
-          [8.500288, 4.771983],
-        ]],
-      },
-    },
-  ],
-}
-
 export const mapHubs = {
   type: 'FeatureCollection',
   features: [
@@ -53,6 +17,56 @@ export const mapCorridors = {
     { type: 'Feature', properties: { code: 'KAN–MDG', risk: 74, status: 'unfavorable', label: 'Kano → Maiduguri' }, geometry: { type: 'LineString', coordinates: [[8.592, 12.0022], [10.5, 11.75], [13.1571, 11.8469]] } },
     { type: 'Feature', properties: { code: 'LOS–IBD', risk: 12, status: 'favorable', label: 'Lagos → Ibadan' }, geometry: { type: 'LineString', coordinates: [[3.3792, 6.5244], [3.947, 7.3775]] } },
   ],
+}
+
+function interpolateRoute(coordinates, progress) {
+  const segments = coordinates.slice(1).map((coordinate, index) => ({
+    from: coordinates[index],
+    to: coordinate,
+    length: Math.hypot(coordinate[0] - coordinates[index][0], coordinate[1] - coordinates[index][1]),
+  }))
+  const totalLength = segments.reduce((sum, segment) => sum + segment.length, 0)
+  let remaining = ((progress % 1) + 1) % 1 * totalLength
+
+  for (const segment of segments) {
+    if (remaining <= segment.length) {
+      const ratio = segment.length ? remaining / segment.length : 0
+      return [
+        segment.from[0] + (segment.to[0] - segment.from[0]) * ratio,
+        segment.from[1] + (segment.to[1] - segment.from[1]) * ratio,
+      ]
+    }
+    remaining -= segment.length
+  }
+
+  return coordinates.at(-1)
+}
+
+export function createCorridorTraffic(progress = 0) {
+  const vehicleOffsets = [0, .48]
+  const trailOffsets = [0, .012, .026, .043]
+
+  return {
+    type: 'FeatureCollection',
+    features: mapCorridors.features.flatMap((corridor, routeIndex) => (
+      vehicleOffsets.flatMap((vehicleOffset, vehicleIndex) => (
+        trailOffsets.map((trailOffset, trailIndex) => ({
+          type: 'Feature',
+          properties: {
+            code: corridor.properties.code,
+            status: corridor.properties.status,
+            strength: 1 - trailIndex * .23,
+            head: trailIndex === 0 ? 1 : 0,
+            vehicle: `${routeIndex}-${vehicleIndex}`,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: interpolateRoute(corridor.geometry.coordinates, progress + vehicleOffset - trailOffset),
+          },
+        }))
+      ))
+    )),
+  }
 }
 
 export const alertZones = {
@@ -97,4 +111,4 @@ export function createWeatherCells(phase = 0) {
   }
 }
 
-export const nigeriaBounds = [[2.2, 3.8], [15.1, 14.25]]
+export const nigeriaBounds = [[2.55, 4.13], [14.82, 14.02]]
