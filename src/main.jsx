@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { lazy, Suspense, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource/inter/latin-400.css'
 import '@fontsource/inter/latin-500.css'
@@ -28,7 +28,6 @@ import {
   Pause,
   Plane,
   Play,
-  Radio,
   Route,
   Settings,
   ShieldCheck,
@@ -39,6 +38,8 @@ import {
 } from 'lucide-react'
 import mapReference from './assets/nigeria-weather-map.png'
 import './styles.css'
+
+const LiveWeatherMap = lazy(() => import('./components/LiveWeatherMap'))
 
 const navItems = [
   { label: 'Overview', page: 'overview', icon: Home },
@@ -114,13 +115,6 @@ const corridors = [
   { code: 'KAN–MDG', from: 'Kano', to: 'Maiduguri', risk: 74, level: 'unfavorable', weather: 'Strong winds', wind: '28 km/h NE', eta: 'On hold' },
   { code: 'LOS–IBD', from: 'Lagos', to: 'Ibadan', risk: 12, level: 'favorable', weather: 'Cloudy', wind: '8 km/h SE', eta: '31 min' },
 ]
-
-const windStreaks = Array.from({ length: 20 }, (_, index) => ({
-  x: (index * 17 + 8) % 94,
-  y: (index * 29 + 11) % 86,
-  delay: -((index * 0.37) % 4),
-  duration: 3.2 + (index % 5) * 0.38,
-}))
 
 function BrandMark({ compact = false }) {
   return (
@@ -222,7 +216,7 @@ function Header() {
       <div className="topbar-meta">
         <div className="meta-block source">
           <span>DATA SOURCE</span>
-          <strong>Open-Meteo, NOAA, ECMWF</strong>
+          <strong>OpenFreeMap, Open-Meteo</strong>
         </div>
         <div className="meta-block updated">
           <span>LAST UPDATED</span>
@@ -232,9 +226,9 @@ function Header() {
           <span>€ SYSTEM STATUS</span>
           <strong className="operational"><i /> OPERATIONAL</strong>
         </div>
-        <div className="mapbox-brand" aria-label="Mapbox">
+        <div className="mapbox-brand" aria-label="MapLibre">
           <span className="mapbox-pin">◆</span>
-          <strong>mapbox</strong>
+          <strong>maplibre</strong>
         </div>
       </div>
     </header>
@@ -321,44 +315,12 @@ function ActiveAlerts({ onOpen }) {
   )
 }
 
-function MapMotion({ paused = false }) {
-  return (
-    <div className={`map-motion ${paused ? 'paused' : ''}`} aria-hidden="true">
-      <span className="storm-pulse pulse-north" />
-      <span className="storm-pulse pulse-south" />
-      <span className="location-pulse pulse-kaduna" />
-      <span className="location-pulse pulse-calabar" />
-      <div className="wind-field">
-        {windStreaks.map((streak, index) => (
-          <i
-            key={index}
-            style={{ '--x': `${streak.x}%`, '--y': `${streak.y}%`, '--delay': `${streak.delay}s`, '--duration': `${streak.duration}s` }}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function MapPanel({ expanded = false, paused = false, onToggleMotion }) {
-  const [zoom, setZoom] = useState(1)
+function MapPanel({ expanded = false, paused = false, onToggleMotion, mode = 'overview', layer = 'Rainfall', interactive = true }) {
   return (
     <section className={`map-panel ${expanded ? 'expanded' : ''}`} aria-label="Live weather map of Nigeria">
-      <img src={mapReference} alt="Weather radar over Nigeria with rainfall and wind speed layers" style={{ transform: `scale(${zoom})` }} />
-      <MapMotion paused={paused} />
-      {expanded && (
-        <>
-          <div className="map-live-chip"><Radio size={13} /> LIVE WEATHER</div>
-          <button type="button" className="motion-toggle" onClick={onToggleMotion} aria-label={paused ? 'Play map animation' : 'Pause map animation'}>
-            {paused ? <Play size={15} /> : <Pause size={15} />}
-          </button>
-        </>
-      )}
-      <div className="map-hit-controls" aria-label="Map controls">
-        <button type="button" title="Zoom in" aria-label="Zoom in" onClick={() => setZoom((current) => Math.min(1.32, current + .08))}>+</button>
-        <button type="button" title="Zoom out" aria-label="Zoom out" onClick={() => setZoom((current) => Math.max(1, current - .08))}>−</button>
-        <button type="button" title="Reset map zoom" aria-label="Reset map zoom" onClick={() => setZoom(1)}><Layers3 size={16} /></button>
-      </div>
+      <Suspense fallback={<img className="map-panel-fallback" src={mapReference} alt="Loading interactive map of Nigeria" />}>
+        <LiveWeatherMap mode={mode} layer={layer} expanded={expanded} paused={paused} onToggleMotion={onToggleMotion} interactive={interactive} />
+      </Suspense>
     </section>
   )
 }
@@ -596,7 +558,11 @@ function AlertsPage({ onBack }) {
 
         <aside className="detail-card alert-map-card">
           <div className="section-title"><div><span>ALERT DISTRIBUTION</span><p>Live affected regions</p></div></div>
-          <div className="mini-map"><img src={mapReference} alt="Weather alert distribution across Nigeria" /><MapMotion /><i className="zone zone-one" /><i className="zone zone-two" /><i className="zone zone-three" /></div>
+          <div className="mini-map">
+            <Suspense fallback={<img src={mapReference} alt="Loading alert map" />}>
+              <LiveWeatherMap mode="alerts" interactive={false} className="mini-live-map" />
+            </Suspense>
+          </div>
           <div className="map-alert-legend"><span><i className="legend-dot red" /> Warning</span><span><i className="legend-dot yellow" /> Caution</span><span><i className="legend-dot green" /> Clear</span></div>
         </aside>
       </div>
@@ -621,13 +587,7 @@ function CorridorsPage({ onBack }) {
 
       <div className="corridor-layout">
         <section className="corridor-map-wrap">
-          <MapPanel />
-          <svg className="route-overlay" viewBox="0 0 1000 680" preserveAspectRatio="none" aria-hidden="true">
-            <path className="route favorable" d="M400 255 C475 300 500 350 472 388" />
-            <path className="route caution" d="M390 565 C520 600 590 570 640 535" />
-            <path className="route unfavorable" d="M520 205 C665 190 765 198 842 235" />
-            <path className="route favorable" d="M245 475 C310 440 350 425 405 416" />
-          </svg>
+          <MapPanel mode="corridors" />
           <div className="route-map-label"><Navigation size={14} /> 18 corridors monitored in real time</div>
         </section>
 
@@ -668,7 +628,7 @@ function WeatherMapPage({ onBack }) {
           <div className="animation-state"><Activity size={15} /><div><strong>Animation</strong><span>{paused ? 'Paused' : 'Live · 10 min loop'}</span></div><button type="button" onClick={() => setPaused(!paused)}>{paused ? <Play size={14} /> : <Pause size={14} />}</button></div>
         </aside>
         <div className={`expanded-map-wrap layer-${layer.toLowerCase().replace(' ', '-')}`}>
-          <MapPanel expanded paused={paused} onToggleMotion={() => setPaused(!paused)} />
+          <MapPanel mode="weather" layer={layer} expanded paused={paused} onToggleMotion={() => setPaused(!paused)} />
           <div className="selected-layer"><Layers3 size={14} /> {layer}</div>
           <div className="map-timeline"><button type="button"><Play size={13} /></button><span>09:30</span><div><i /></div><strong>10:30 WAT</strong></div>
         </div>
