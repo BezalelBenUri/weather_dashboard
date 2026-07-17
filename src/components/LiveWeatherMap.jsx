@@ -151,10 +151,10 @@ const factorLegends = {
   },
 }
 
-function FactorLegend({ layer, value, frameLabel, compact }) {
+function FactorLegend({ layer, value, frameLabel }) {
   const legend = factorLegends[layer] || factorLegends.Rainfall
   return (
-    <section className={`factor-map-legend ${compact ? 'compact' : ''}`} aria-label={`${legend.title} legend`}>
+    <section className="factor-map-legend" aria-label={`${legend.title} legend`}>
       <header>
         <div><span>{legend.title}</span><strong>{value || legend.current}</strong></div>
         <small>{frameLabel || 'Current conditions'}</small>
@@ -670,7 +670,7 @@ export default function LiveWeatherMap({
       <img className="live-map-fallback" src={fallbackMap} alt="Nigeria weather map fallback" />
       <div ref={containerRef} className="maplibre-canvas" aria-label="Interactive weather map of Nigeria" />
       <WeatherParticleLayer layer={layer} paused={paused} visible={status === 'ready'} />
-      <FactorLegend layer={layer} value={factorValue} frameLabel={frameLabel} compact={!expanded} />
+      {mode === 'weather' && expanded && <FactorLegend layer={layer} value={factorValue} frameLabel={frameLabel} />}
 
       {status === 'loading' && <div className="map-loading"><i /><span>Loading live basemap</span></div>}
       {status === 'fallback' && <div className="map-fallback-notice"><span>Map temporarily offline</span><small>Showing cached weather view</small></div>}
@@ -686,7 +686,7 @@ export default function LiveWeatherMap({
           <div className="map-live-chip"><Radio size={13} /> INTERACTIVE MAP</div>
           <div className="map-primary-controls">
             <div className="selected-layer"><Layers3 size={14} /> {layer}</div>
-            <button type="button" className="motion-toggle" onClick={onToggleMotion} aria-label={paused ? 'Play factor timeline' : 'Pause factor timeline'}>
+            <button type="button" className="motion-toggle" onClick={onToggleMotion} aria-label={paused ? 'Play map animation' : 'Pause map animation'}>
               {paused ? <Play size={15} /> : <Pause size={15} />}
             </button>
           </div>
