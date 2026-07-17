@@ -92,10 +92,11 @@ const layerPalettes = {
   Visibility: [
     'interpolate', ['linear'], ['heatmap-density'],
     0, 'rgba(4, 25, 43, 0)',
-    .22, 'rgba(43, 114, 163, .11)',
-    .52, 'rgba(58, 177, 211, .34)',
-    .78, 'rgba(89, 219, 216, .48)',
-    1, 'rgba(188, 255, 244, .65)',
+    .16, 'rgba(188, 255, 244, .14)',
+    .36, 'rgba(58, 177, 211, .42)',
+    .58, 'rgba(222, 220, 50, .62)',
+    .78, 'rgba(245, 166, 35, .76)',
+    1, 'rgba(237, 75, 62, .88)',
   ],
   Temperature: [
     'interpolate', ['linear'], ['heatmap-density'],
@@ -105,6 +106,69 @@ const layerPalettes = {
     .7, 'rgba(247, 131, 23, .68)',
     1, 'rgba(230, 57, 42, .84)',
   ],
+}
+
+const factorLegends = {
+  Rainfall: {
+    title: 'Rainfall intensity',
+    unit: 'mm/hr',
+    current: '1.2 mm/hr',
+    gradient: 'linear-gradient(90deg, #138962, #29be56 28%, #dcd921 52%, #ff850c 76%, #eb3127)',
+    ticks: ['0', '1', '5', '20', '50+'],
+    descriptors: ['Light', 'Moderate', 'Heavy'],
+  },
+  'Wind Speed': {
+    title: 'Sustained wind speed',
+    unit: 'km/h',
+    current: '12 km/h NE',
+    gradient: 'linear-gradient(90deg, #236fcb, #3daae6 32%, #7165dd 67%, #e05bd5)',
+    ticks: ['0', '10', '20', '35', '50+'],
+    descriptors: ['Calm', 'Operational', 'Strong'],
+  },
+  'Cloud Cover': {
+    title: 'Total cloud cover',
+    unit: '%',
+    current: '68%',
+    gradient: 'linear-gradient(90deg, #526e84, #839caf 30%, #b3c8d8 65%, #f4f9ff)',
+    ticks: ['0', '25', '50', '75', '100'],
+    descriptors: ['Clear', 'Broken', 'Overcast'],
+  },
+  Visibility: {
+    title: 'Surface visibility',
+    unit: 'km',
+    current: '10 km',
+    gradient: 'linear-gradient(90deg, #ed4b3e, #f5a623 25%, #dedc32 48%, #3ab8d3 72%, #bcfff4)',
+    ticks: ['<1', '3', '5', '10', '15+'],
+    descriptors: ['Restricted', 'Reduced', 'Clear'],
+  },
+  Temperature: {
+    title: 'Air temperature',
+    unit: '°C',
+    current: '26°C',
+    gradient: 'linear-gradient(90deg, #55b759, #ebcc27 35%, #f78317 68%, #e6392a)',
+    ticks: ['18', '22', '26', '30', '35+'],
+    descriptors: ['Cool', 'Warm', 'Hot'],
+  },
+}
+
+function FactorLegend({ layer, value, frameLabel, compact }) {
+  const legend = factorLegends[layer] || factorLegends.Rainfall
+  return (
+    <section className={`factor-map-legend ${compact ? 'compact' : ''}`} aria-label={`${legend.title} legend`}>
+      <header>
+        <div><span>{legend.title}</span><strong>{value || legend.current}</strong></div>
+        <small>{frameLabel || 'Current conditions'}</small>
+      </header>
+      <div className="factor-legend-gradient" style={{ background: legend.gradient }} />
+      <div className="factor-legend-ticks">
+        {legend.ticks.map((tick) => <span key={tick}>{tick}</span>)}
+      </div>
+      <footer>
+        {legend.descriptors.map((descriptor) => <span key={descriptor}>{descriptor}</span>)}
+        <i>{legend.unit}</i>
+      </footer>
+    </section>
+  )
 }
 
 function WeatherParticleLayer({ layer, paused, visible }) {
@@ -215,7 +279,7 @@ function WeatherParticleLayer({ layer, paused, visible }) {
   return <canvas ref={canvasRef} className="weather-particle-canvas" aria-hidden="true" />
 }
 
-function addOperationalLayers(map) {
+function addOperationalLayers(map, frameIndex = 0) {
   const firstLabel = map.getStyle().layers?.find((layer) => layer.type === 'symbol')?.id
 
   map.addSource('nigeria-boundary', { type: 'geojson', data: nigeriaBoundaryUrl })
@@ -238,7 +302,7 @@ function addOperationalLayers(map) {
     paint: { 'line-color': '#d4e5ee', 'line-width': 1.8, 'line-opacity': .92 },
   })
 
-  map.addSource('weather-cells', { type: 'geojson', data: createWeatherCells(0) })
+  map.addSource('weather-cells', { type: 'geojson', data: createWeatherCells(frameIndex * .78) })
   map.addLayer({
     id: 'weather-heatmap',
     type: 'heatmap',
@@ -425,14 +489,19 @@ export default function LiveWeatherMap({
   paused = false,
   onToggleMotion,
   className = '',
+  frameIndex = 0,
+  factorValue,
+  frameLabel,
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const animationRef = useRef(null)
   const pausedRef = useRef(paused)
+  const frameIndexRef = useRef(frameIndex)
   const [status, setStatus] = useState('loading')
 
   pausedRef.current = paused
+  frameIndexRef.current = frameIndex
 
   const fitNigeria = useCallback((animated = true) => {
     mapRef.current?.fitBounds(nigeriaBounds, {
@@ -499,7 +568,7 @@ export default function LiveWeatherMap({
         if (initialized) return
         initialized = true
         window.clearTimeout(loadTimer)
-        addOperationalLayers(map)
+        addOperationalLayers(map, frameIndexRef.current)
         setLayerVisibility(map, mode)
         setWeatherPalette(map, layer)
         fitNigeria(false)
@@ -533,7 +602,7 @@ export default function LiveWeatherMap({
         const animate = (timestamp) => {
           if (!pausedRef.current && timestamp - lastUpdate > 160) {
             phase += .045
-            map.getSource('weather-cells')?.setData(createWeatherCells(phase))
+            map.getSource('weather-cells')?.setData(createWeatherCells(phase + frameIndexRef.current * .78))
             const pulse = 14 + Math.sin(phase * 3.1) * 4
             map.setPaintProperty('hub-pulse', 'circle-radius', pulse)
             map.setPaintProperty('hub-pulse', 'circle-opacity', .1 + (Math.sin(phase * 3.1) + 1) * .055)
@@ -583,11 +652,25 @@ export default function LiveWeatherMap({
     setWeatherPalette(map, layer)
   }, [layer, status])
 
+  useEffect(() => {
+    const map = mapRef.current
+    if (status !== 'ready' || !map) return
+    const strengths = [.72, .82, .94, 1.08, 1.24, 1.14, 1]
+    const strength = strengths[frameIndex % strengths.length]
+    map.getSource('weather-cells')?.setData(createWeatherCells(frameIndex * .78))
+    map.setPaintProperty('weather-heatmap', 'heatmap-intensity', [
+      'interpolate', ['linear'], ['zoom'],
+      3, .78 * strength,
+      7, 1.28 * strength,
+    ])
+  }, [frameIndex, status])
+
   return (
     <div className={`live-weather-map ${className} is-${status}`}>
       <img className="live-map-fallback" src={fallbackMap} alt="Nigeria weather map fallback" />
       <div ref={containerRef} className="maplibre-canvas" aria-label="Interactive weather map of Nigeria" />
       <WeatherParticleLayer layer={layer} paused={paused} visible={status === 'ready'} />
+      <FactorLegend layer={layer} value={factorValue} frameLabel={frameLabel} compact={!expanded} />
 
       {status === 'loading' && <div className="map-loading"><i /><span>Loading live basemap</span></div>}
       {status === 'fallback' && <div className="map-fallback-notice"><span>Map temporarily offline</span><small>Showing cached weather view</small></div>}
@@ -601,9 +684,12 @@ export default function LiveWeatherMap({
       {expanded && (
         <>
           <div className="map-live-chip"><Radio size={13} /> INTERACTIVE MAP</div>
-          <button type="button" className="motion-toggle" onClick={onToggleMotion} aria-label={paused ? 'Play weather animation' : 'Pause weather animation'}>
-            {paused ? <Play size={15} /> : <Pause size={15} />}
-          </button>
+          <div className="map-primary-controls">
+            <div className="selected-layer"><Layers3 size={14} /> {layer}</div>
+            <button type="button" className="motion-toggle" onClick={onToggleMotion} aria-label={paused ? 'Play factor timeline' : 'Pause factor timeline'}>
+              {paused ? <Play size={15} /> : <Pause size={15} />}
+            </button>
+          </div>
           <div className="open-map-source"><Layers3 size={12} /> OPENFREEMAP · OSM</div>
         </>
       )}

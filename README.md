@@ -21,6 +21,7 @@ The interface includes:
 - Animated storm cells, hubs, alert zones, and moving traffic along geographic flight corridors
 - High-resolution Nigeria boundary rendering from the supplied CRS84 GeoJSON
 - Map pan/zoom, reset, animation controls, popups, and weather-layer selection
+- Adaptive factor legends plus a playable, pausable, and scrubbable 10-minute weather timeline
 - Deep-linked forecast, alert, corridor, map, hub, report, and settings pages
 - Browser back/forward support through URL hash routes
 - An automatic cached-image fallback if the external map style is unavailable

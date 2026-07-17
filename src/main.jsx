@@ -21,7 +21,6 @@ import {
   FileText,
   Gauge,
   Home,
-  Layers3,
   Map as MapIcon,
   MapPin,
   Navigation,
@@ -73,6 +72,16 @@ const parameters = [
   { label: 'Visibility', value: '10 km', icon: Eye },
   { label: 'Temperature', value: '26°C', icon: Thermometer },
   { label: 'Dew Point', value: '22°C', icon: Droplets },
+]
+
+const weatherTimelineFrames = [
+  { time: '09:30', values: { Rainfall: '0.6 mm/hr', 'Wind Speed': '8 km/h NE', 'Cloud Cover': '52%', Visibility: '14 km', Temperature: '24°C' } },
+  { time: '09:40', values: { Rainfall: '0.8 mm/hr', 'Wind Speed': '10 km/h NE', 'Cloud Cover': '57%', Visibility: '13 km', Temperature: '25°C' } },
+  { time: '09:50', values: { Rainfall: '1.0 mm/hr', 'Wind Speed': '11 km/h NE', 'Cloud Cover': '61%', Visibility: '12 km', Temperature: '25°C' } },
+  { time: '10:00', values: { Rainfall: '1.3 mm/hr', 'Wind Speed': '14 km/h NE', 'Cloud Cover': '66%', Visibility: '10 km', Temperature: '26°C' } },
+  { time: '10:10', values: { Rainfall: '1.6 mm/hr', 'Wind Speed': '16 km/h NE', 'Cloud Cover': '72%', Visibility: '8 km', Temperature: '27°C' } },
+  { time: '10:20', values: { Rainfall: '1.4 mm/hr', 'Wind Speed': '15 km/h NE', 'Cloud Cover': '70%', Visibility: '9 km', Temperature: '27°C' } },
+  { time: '10:30', values: { Rainfall: '1.2 mm/hr', 'Wind Speed': '12 km/h NE', 'Cloud Cover': '68%', Visibility: '10 km', Temperature: '26°C' } },
 ]
 
 const hubs = [
@@ -315,11 +324,31 @@ function ActiveAlerts({ onOpen }) {
   )
 }
 
-function MapPanel({ expanded = false, paused = false, onToggleMotion, mode = 'overview', layer = 'Rainfall', interactive = true }) {
+function MapPanel({
+  expanded = false,
+  paused = false,
+  onToggleMotion,
+  mode = 'overview',
+  layer = 'Rainfall',
+  interactive = true,
+  frameIndex = weatherTimelineFrames.length - 1,
+  factorValue,
+  frameLabel,
+}) {
   return (
     <section className={`map-panel ${expanded ? 'expanded' : ''}`} aria-label="Live weather map of Nigeria">
       <Suspense fallback={<img className="map-panel-fallback" src={mapReference} alt="Loading interactive map of Nigeria" />}>
-        <LiveWeatherMap mode={mode} layer={layer} expanded={expanded} paused={paused} onToggleMotion={onToggleMotion} interactive={interactive} />
+        <LiveWeatherMap
+          mode={mode}
+          layer={layer}
+          expanded={expanded}
+          paused={paused}
+          onToggleMotion={onToggleMotion}
+          interactive={interactive}
+          frameIndex={frameIndex}
+          factorValue={factorValue}
+          frameLabel={frameLabel}
+        />
       </Suspense>
     </section>
   )
@@ -610,6 +639,20 @@ function CorridorsPage({ onBack }) {
 function WeatherMapPage({ onBack }) {
   const [paused, setPaused] = useState(false)
   const [layer, setLayer] = useState('Rainfall')
+  const [frameIndex, setFrameIndex] = useState(0)
+  const currentFrame = weatherTimelineFrames[frameIndex]
+  const timelineProgress = frameIndex / (weatherTimelineFrames.length - 1) * 100
+
+  useEffect(() => {
+    if (paused) return undefined
+    const timer = window.setInterval(() => {
+      setFrameIndex((current) => (current + 1) % weatherTimelineFrames.length)
+    }, 1200)
+    return () => window.clearInterval(timer)
+  }, [paused])
+
+  const togglePlayback = () => setPaused((current) => !current)
+
   return (
     <PageFrame
       eyebrow="LIVE MAP"
@@ -625,12 +668,41 @@ function WeatherMapPage({ onBack }) {
             return <button type="button" className={layer === item ? 'active' : ''} onClick={() => setLayer(item)} key={item}><Icon size={16} /><span>{item}</span><i /></button>
           })}
           <div className="layer-divider" />
-          <div className="animation-state"><Activity size={15} /><div><strong>Animation</strong><span>{paused ? 'Paused' : 'Live · 10 min loop'}</span></div><button type="button" onClick={() => setPaused(!paused)}>{paused ? <Play size={14} /> : <Pause size={14} />}</button></div>
+          <div className="animation-state">
+            <Activity size={15} />
+            <div><strong>Factor timeline</strong><span>{paused ? `Paused · ${currentFrame.time} WAT` : `Playing · ${currentFrame.time} WAT`}</span></div>
+            <button type="button" onClick={togglePlayback} aria-label={paused ? 'Play factor timeline' : 'Pause factor timeline'}>{paused ? <Play size={14} /> : <Pause size={14} />}</button>
+          </div>
         </aside>
         <div className={`expanded-map-wrap layer-${layer.toLowerCase().replace(' ', '-')}`}>
-          <MapPanel mode="weather" layer={layer} expanded paused={paused} onToggleMotion={() => setPaused(!paused)} />
-          <div className="selected-layer"><Layers3 size={14} /> {layer}</div>
-          <div className="map-timeline"><button type="button"><Play size={13} /></button><span>09:30</span><div><i /></div><strong>10:30 WAT</strong></div>
+          <MapPanel
+            mode="weather"
+            layer={layer}
+            expanded
+            paused={paused}
+            onToggleMotion={togglePlayback}
+            frameIndex={frameIndex}
+            factorValue={currentFrame.values[layer]}
+            frameLabel={`${currentFrame.time} WAT`}
+          />
+          <div className="map-timeline">
+            <button type="button" onClick={togglePlayback} aria-label={paused ? 'Play factor timeline' : 'Pause factor timeline'}>{paused ? <Play size={13} /> : <Pause size={13} />}</button>
+            <span>{weatherTimelineFrames[0].time}</span>
+            <input
+              type="range"
+              min="0"
+              max={weatherTimelineFrames.length - 1}
+              step="1"
+              value={frameIndex}
+              style={{ '--timeline-progress': `${timelineProgress}%` }}
+              onChange={(event) => {
+                setFrameIndex(Number(event.target.value))
+                setPaused(true)
+              }}
+              aria-label="Weather factor time"
+            />
+            <strong>{currentFrame.time} WAT</strong>
+          </div>
         </div>
       </div>
     </PageFrame>
