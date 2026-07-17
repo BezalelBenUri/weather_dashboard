@@ -1750,6 +1750,41 @@ button {
 .corridor-map-wrap .map-panel,
 .expanded-map-wrap .map-panel { width: 100%; height: 100%; border-radius: 0; }
 
+.route-intel-link {
+  min-height: 36px;
+  position: absolute;
+  z-index: 7;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  color: #f4f9ff;
+  background: linear-gradient(135deg, rgba(36, 130, 229, .96), rgba(20, 92, 174, .96));
+  border: 1px solid rgba(124, 191, 255, .7);
+  border-radius: 7px;
+  box-shadow: 0 8px 24px rgba(2, 12, 22, .45), 0 0 18px rgba(42, 142, 240, .18);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .55px;
+  text-decoration: none;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  transition: transform .18s ease, border-color .18s ease, filter .18s ease;
+}
+
+.route-intel-link:hover {
+  border-color: #b9ddff;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.route-intel-link:focus-visible {
+  outline: 2px solid #9ed2ff;
+  outline-offset: 3px;
+}
+
 .route-map-label {
   right: 14px;
   bottom: 15px;
@@ -2607,6 +2642,15 @@ button {
   .corridors-page .corridor-layout {
     grid-template-columns: minmax(0, 1fr) 355px;
     gap: 8px;
+  }
+
+  .corridors-page .route-intel-link {
+    min-height: 30px;
+    top: 10px;
+    left: 10px;
+    gap: 5px;
+    padding: 6px 9px;
+    font-size: 7.5px;
   }
 
   .corridors-page .corridor-list {
