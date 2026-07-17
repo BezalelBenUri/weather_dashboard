@@ -18,6 +18,7 @@ import {
   Clock3,
   Droplets,
   Eye,
+  ExternalLink,
   FileText,
   Gauge,
   Home,
@@ -619,6 +620,17 @@ function CorridorsPage({ onBack }) {
       <div className="corridor-layout">
         <section className="corridor-map-wrap">
           <MapPanel mode="corridors" />
+          <a
+            className="route-intel-link"
+            href="https://jocimycin.github.io/oea-vantage-demo/dashboard"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open Route Intel dashboard"
+          >
+            <Route size={14} />
+            <span>Route Intel</span>
+            <ExternalLink size={12} />
+          </a>
           <div className="route-map-label"><Navigation size={14} /> 18 corridors monitored in real time</div>
         </section>
 
