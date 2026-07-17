@@ -801,7 +801,7 @@ button {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  opacity: .68;
+  opacity: .76;
   mix-blend-mode: screen;
 }
 
@@ -892,17 +892,6 @@ button {
   color: #a9bdcd;
   font-size: 6.5px;
   font-style: normal;
-}
-
-.factor-map-legend.compact {
-  bottom: 15px;
-  left: 15px;
-  width: min(235px, calc(100% - 88px));
-  padding: 8px 9px 7px;
-}
-
-.factor-map-legend.compact footer {
-  display: none;
 }
 
 .open-map-source {
@@ -1639,7 +1628,7 @@ button {
 /* Alerts */
 .alerts-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 335px;
+  grid-template-columns: minmax(0, 1fr) 370px;
   gap: 10px;
 }
 
@@ -1735,23 +1724,12 @@ button {
 }
 
 .mini-map {
-  height: 420px;
+  height: 455px;
   position: relative;
   overflow: hidden;
 }
 
 .mini-map > img { width: 100%; height: 100%; object-fit: cover; }
-.map-alert-legend {
-  min-height: 47px;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  border-top: 1px solid #1c3548;
-}
-
-.map-alert-legend span { display: flex; align-items: center; gap: 5px; color: #9fb0c1; font-size: 8px; }
-.map-alert-legend .legend-dot { width: 7px; height: 7px; }
-
 /* Corridors and full map */
 .corridor-layout {
   min-height: 590px;
@@ -2321,6 +2299,343 @@ button {
   .donut.risk {
     width: 82px;
   }
+
+  :is(.forecast-page, .alerts-page, .corridors-page).detail-page {
+    overflow: hidden;
+    padding-bottom: 8px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .detail-header {
+    min-height: 72px;
+    height: 72px;
+    padding-block: 7px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .page-back {
+    width: 34px;
+    height: 34px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .page-eyebrow {
+    margin-bottom: 3px;
+    font-size: 7.5px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .detail-header h2 {
+    margin-bottom: 3px;
+    font-size: 18px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .detail-header p {
+    font-size: 8.5px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .detail-body {
+    height: calc(100% - 72px);
+    min-height: 0;
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .kpi-grid {
+    height: 58px;
+    gap: 8px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .kpi-card {
+    min-height: 0;
+    gap: 9px;
+    padding: 7px 11px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .kpi-icon {
+    width: 31px;
+    height: 31px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .kpi-card span,
+  :is(.forecast-page, .alerts-page, .corridors-page) .kpi-card small {
+    font-size: 7.5px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .kpi-card strong {
+    font-size: 14px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .section-title {
+    min-height: 36px;
+    height: 36px;
+    padding: 7px 10px 5px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .section-title > div {
+    gap: 2px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .section-title span {
+    font-size: 8px;
+  }
+
+  :is(.forecast-page, .alerts-page, .corridors-page) .section-title p {
+    font-size: 7px;
+  }
+
+  .forecast-page .detail-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.38fr) minmax(385px, .92fr);
+    grid-template-rows: 58px repeat(2, minmax(0, 1fr));
+  }
+
+  .forecast-page .kpi-grid {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+
+  .forecast-page .forecast-detail-grid {
+    min-height: 0;
+    grid-column: 1;
+    grid-row: 2 / 4;
+    grid-template-columns: minmax(0, 1fr) 185px;
+    gap: 8px;
+  }
+
+  .forecast-page .temperature-trend,
+  .forecast-page .operations-window,
+  .forecast-page .hourly-card,
+  .forecast-page .week-card {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .forecast-page .trend-chart {
+    height: calc(100% - 36px);
+    padding: 5px 10px 19px;
+  }
+
+  .forecast-page .window-score {
+    top: 48px;
+    left: 10px;
+  }
+
+  .forecast-page .window-score .donut {
+    width: 84px;
+  }
+
+  .forecast-page .window-list {
+    margin: 13px 8px 0 103px;
+    gap: 12px;
+  }
+
+  .forecast-page .hourly-card {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .forecast-page .week-card {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .forecast-page .hourly-strip,
+  .forecast-page .week-grid {
+    height: calc(100% - 36px);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 5px;
+    overflow: hidden;
+  }
+
+  .forecast-page .hourly-strip article,
+  .forecast-page .week-grid article {
+    min-height: 0;
+    gap: 2px;
+    border-radius: 5px;
+  }
+
+  .forecast-page .hourly-strip .weather-glyph,
+  .forecast-page .week-grid .weather-glyph {
+    width: 28px;
+    height: auto;
+  }
+
+  .forecast-page .hourly-strip article > strong,
+  .forecast-page .week-grid article > span {
+    font-size: 9px;
+  }
+
+  .forecast-page .hourly-strip article small,
+  .forecast-page .week-grid article > small,
+  .forecast-page .week-grid article > strong {
+    font-size: 6.5px;
+  }
+
+  .forecast-page .week-grid .status-badge {
+    height: 15px;
+    min-width: 45px;
+    font-size: 5.5px;
+  }
+
+  .alerts-page .detail-body,
+  .corridors-page .detail-body {
+    display: grid;
+    grid-template-rows: 58px minmax(0, 1fr);
+  }
+
+  .alerts-page .alerts-layout,
+  .corridors-page .corridor-layout {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .alerts-page .alerts-layout {
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 8px;
+  }
+
+  .alerts-page .filter-bar {
+    min-height: 38px;
+    height: 38px;
+    margin-bottom: 6px;
+    padding-block: 4px;
+  }
+
+  .alerts-page .alert-detail-list {
+    height: calc(100% - 44px);
+    display: grid;
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .alerts-page .alert-detail-card {
+    min-height: 0;
+    grid-template-columns: 19px minmax(0, 1fr) 12px;
+    gap: 6px;
+    padding: 4px 8px;
+    overflow: hidden;
+  }
+
+  .alerts-page .warning-symbol {
+    width: 19px;
+    height: 19px;
+    font-size: 9px;
+  }
+
+  .alerts-page .alert-detail-title {
+    gap: 6px;
+  }
+
+  .alerts-page .alert-detail-title > div {
+    gap: 1px;
+  }
+
+  .alerts-page .alert-detail-title strong {
+    font-size: 9px;
+    line-height: 1.05;
+  }
+
+  .alerts-page .alert-detail-title span {
+    font-size: 6.5px;
+  }
+
+  .alerts-page .alert-detail-title .status-badge {
+    min-width: 46px;
+    height: 15px;
+    font-size: 5.5px;
+  }
+
+  .alerts-page .alert-facts {
+    gap: 9px;
+    margin-top: 2px;
+  }
+
+  .alerts-page .alert-facts span {
+    gap: 3px;
+    font-size: 6.5px;
+  }
+
+  .alerts-page .alert-facts svg {
+    width: 9px;
+    height: 9px;
+  }
+
+  .alerts-page .alert-detail-main > p {
+    margin: 2px 0;
+    overflow: hidden;
+    font-size: 7px;
+    line-height: 1.1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .alerts-page .recommended-action {
+    gap: 3px;
+    overflow: hidden;
+    font-size: 6.5px;
+    line-height: 1.05;
+    white-space: nowrap;
+  }
+
+  .alerts-page .recommended-action svg {
+    width: 10px;
+    height: 10px;
+    flex: 0 0 auto;
+  }
+
+  .alerts-page .recommended-action strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .alerts-page .alert-chevron {
+    width: 12px;
+    height: 12px;
+  }
+
+  .alerts-page .alert-map-card {
+    height: 100%;
+    align-self: stretch;
+    display: grid;
+    grid-template-rows: 36px minmax(0, 1fr);
+  }
+
+  .alerts-page .mini-map {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .corridors-page .corridor-layout {
+    grid-template-columns: minmax(0, 1fr) 355px;
+    gap: 8px;
+  }
+
+  .corridors-page .corridor-list {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 36px repeat(4, minmax(0, 1fr));
+    padding-bottom: 0;
+  }
+
+  .corridors-page .corridor-row {
+    min-height: 0;
+    padding: 6px 10px;
+  }
+
+  .corridors-page .corridor-code > div {
+    gap: 2px;
+  }
+
+  .corridors-page .corridor-code strong {
+    font-size: 9px;
+  }
+
+  .corridors-page .corridor-risk-line {
+    margin: 5px 0 4px;
+  }
+
+  .corridors-page .corridor-footer {
+    margin-top: 4px;
+  }
 }
 
 @media (max-width: 1210px) {
@@ -2771,7 +3086,7 @@ button {
     margin: 2px;
   }
 
-  .factor-map-legend:not(.compact) {
+  .factor-map-legend {
     bottom: 75px;
     left: 15px;
     width: calc(100% - 30px);
