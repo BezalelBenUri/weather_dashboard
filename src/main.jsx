@@ -434,9 +434,9 @@ function CorridorRisk({ onOpen }) {
   )
 }
 
-function PageFrame({ eyebrow, title, description, onBack, children }) {
+function PageFrame({ eyebrow, title, description, onBack, children, className = '' }) {
   return (
-    <main className="detail-page page-enter">
+    <main className={`detail-page page-enter ${className}`}>
       <header className="detail-header">
         <div className="detail-title-wrap">
           <button type="button" className="page-back" onClick={onBack} aria-label="Back to overview">
@@ -467,6 +467,7 @@ function KpiCard({ icon: Icon, label, value, detail, tone = 'blue' }) {
 function ForecastPage({ onBack }) {
   return (
     <PageFrame
+      className="forecast-page"
       eyebrow="FORECAST CENTER"
       title="7-Day Weather Forecast"
       description="National outlook and operational flying windows across all active hubs."
@@ -545,6 +546,7 @@ function AlertsPage({ onBack }) {
   const visibleAlerts = filter === 'all' ? alertDetails : alertDetails.filter((alert) => alert.level === filter)
   return (
     <PageFrame
+      className="alerts-page"
       eyebrow="ALERT OPERATIONS"
       title="Active Weather Alerts"
       description="Live advisories, affected operations, and recommended response actions."
@@ -592,7 +594,6 @@ function AlertsPage({ onBack }) {
               <LiveWeatherMap mode="alerts" interactive={false} className="mini-live-map" />
             </Suspense>
           </div>
-          <div className="map-alert-legend"><span><i className="legend-dot red" /> Warning</span><span><i className="legend-dot yellow" /> Caution</span><span><i className="legend-dot green" /> Clear</span></div>
         </aside>
       </div>
     </PageFrame>
@@ -602,6 +603,7 @@ function AlertsPage({ onBack }) {
 function CorridorsPage({ onBack }) {
   return (
     <PageFrame
+      className="corridors-page"
       eyebrow="FLIGHT OPERATIONS"
       title="Flight Corridor Risk"
       description="Route-level weather exposure and operational clearance across the network."
@@ -637,21 +639,23 @@ function CorridorsPage({ onBack }) {
 }
 
 function WeatherMapPage({ onBack }) {
-  const [paused, setPaused] = useState(false)
+  const [motionPaused, setMotionPaused] = useState(false)
+  const [timelinePaused, setTimelinePaused] = useState(false)
   const [layer, setLayer] = useState('Rainfall')
   const [frameIndex, setFrameIndex] = useState(0)
   const currentFrame = weatherTimelineFrames[frameIndex]
   const timelineProgress = frameIndex / (weatherTimelineFrames.length - 1) * 100
 
   useEffect(() => {
-    if (paused) return undefined
+    if (timelinePaused) return undefined
     const timer = window.setInterval(() => {
       setFrameIndex((current) => (current + 1) % weatherTimelineFrames.length)
     }, 1200)
     return () => window.clearInterval(timer)
-  }, [paused])
+  }, [timelinePaused])
 
-  const togglePlayback = () => setPaused((current) => !current)
+  const toggleMotion = () => setMotionPaused((current) => !current)
+  const toggleTimeline = () => setTimelinePaused((current) => !current)
 
   return (
     <PageFrame
@@ -670,8 +674,8 @@ function WeatherMapPage({ onBack }) {
           <div className="layer-divider" />
           <div className="animation-state">
             <Activity size={15} />
-            <div><strong>Factor timeline</strong><span>{paused ? `Paused · ${currentFrame.time} WAT` : `Playing · ${currentFrame.time} WAT`}</span></div>
-            <button type="button" onClick={togglePlayback} aria-label={paused ? 'Play factor timeline' : 'Pause factor timeline'}>{paused ? <Play size={14} /> : <Pause size={14} />}</button>
+            <div><strong>Flow animation</strong><span>{motionPaused ? 'Particles paused' : 'Particles moving'}</span></div>
+            <button type="button" onClick={toggleMotion} aria-label={motionPaused ? 'Play map animation' : 'Pause map animation'}>{motionPaused ? <Play size={14} /> : <Pause size={14} />}</button>
           </div>
         </aside>
         <div className={`expanded-map-wrap layer-${layer.toLowerCase().replace(' ', '-')}`}>
@@ -679,14 +683,14 @@ function WeatherMapPage({ onBack }) {
             mode="weather"
             layer={layer}
             expanded
-            paused={paused}
-            onToggleMotion={togglePlayback}
+            paused={motionPaused}
+            onToggleMotion={toggleMotion}
             frameIndex={frameIndex}
             factorValue={currentFrame.values[layer]}
             frameLabel={`${currentFrame.time} WAT`}
           />
           <div className="map-timeline">
-            <button type="button" onClick={togglePlayback} aria-label={paused ? 'Play factor timeline' : 'Pause factor timeline'}>{paused ? <Play size={13} /> : <Pause size={13} />}</button>
+            <button type="button" onClick={toggleTimeline} aria-label={timelinePaused ? 'Play factor timeline' : 'Pause factor timeline'}>{timelinePaused ? <Play size={13} /> : <Pause size={13} />}</button>
             <span>{weatherTimelineFrames[0].time}</span>
             <input
               type="range"
@@ -697,7 +701,7 @@ function WeatherMapPage({ onBack }) {
               style={{ '--timeline-progress': `${timelineProgress}%` }}
               onChange={(event) => {
                 setFrameIndex(Number(event.target.value))
-                setPaused(true)
+                setTimelinePaused(true)
               }}
               aria-label="Weather factor time"
             />
